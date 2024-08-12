@@ -657,27 +657,45 @@ class AsmARM(KeystoneAssembler):
     def __init__(self, inf):
 
         # ARM64
-        if inf.is_64bit():
-            arch = keystone.KS_ARCH_ARM64
+        if ida_pro.IDA_SDK_VERSION < 900:
+            if inf.is_64bit():
+                arch = keystone.KS_ARCH_ARM64
 
-            if inf.is_be():
-                mode = keystone.KS_MODE_BIG_ENDIAN
-            else:
-                mode = keystone.KS_MODE_LITTLE_ENDIAN
+                if inf.is_be():
+                    mode = keystone.KS_MODE_BIG_ENDIAN
+                else:
+                    mode = keystone.KS_MODE_LITTLE_ENDIAN
 
-            # AArch64 does not use THUMB
-            self._ks_thumb = None
-
-        # ARM
+                # AArch64 does not use THUMB
+                self._ks_thumb = None
         else:
-            arch = keystone.KS_ARCH_ARM
+            if ida_ida.inf_is_64bit():
+                arch = keystone.KS_ARCH_ARM64
 
-            if inf.is_be():
-                mode = keystone.KS_MODE_ARM | keystone.KS_MODE_BIG_ENDIAN
-                self._ks_thumb = keystone.Ks(arch, keystone.KS_MODE_THUMB | keystone.KS_MODE_BIG_ENDIAN)
+                if ida_ida.inf_is_be():
+                    mode = keystone.KS_MODE_BIG_ENDIAN
+                else:
+                    mode = keystone.KS_MODE_LITTLE_ENDIAN
+
+                # AArch64 does not use THUMB
+                self._ks_thumb = None            
+        # ARM
             else:
-                mode = keystone.KS_MODE_ARM | keystone.KS_MODE_LITTLE_ENDIAN
-                self._ks_thumb = keystone.Ks(arch, keystone.KS_MODE_THUMB | keystone.KS_MODE_LITTLE_ENDIAN)
+                arch = keystone.KS_ARCH_ARM
+                if ida_pro.IDA_SDK_VERSION < 900:
+                    if inf.is_be():
+                        mode = keystone.KS_MODE_ARM | keystone.KS_MODE_BIG_ENDIAN
+                        self._ks_thumb = keystone.Ks(arch, keystone.KS_MODE_THUMB | keystone.KS_MODE_BIG_ENDIAN)
+                    else:
+                        mode = keystone.KS_MODE_ARM | keystone.KS_MODE_LITTLE_ENDIAN
+                        self._ks_thumb = keystone.Ks(arch, keystone.KS_MODE_THUMB | keystone.KS_MODE_LITTLE_ENDIAN)
+                else:
+                    if ida_ida.inf_is_be():
+                        mode = keystone.KS_MODE_ARM | keystone.KS_MODE_BIG_ENDIAN
+                        self._ks_thumb = keystone.Ks(arch, keystone.KS_MODE_THUMB | keystone.KS_MODE_BIG_ENDIAN)
+                    else:
+                        mode = keystone.KS_MODE_ARM | keystone.KS_MODE_LITTLE_ENDIAN
+                        self._ks_thumb = keystone.Ks(arch, keystone.KS_MODE_THUMB | keystone.KS_MODE_LITTLE_ENDIAN)                    
 
         # initialize keystone-based assembler
         super(AsmARM, self).__init__(arch, mode)
@@ -823,11 +841,16 @@ class AsmPPC(KeystoneAssembler):
     def __init__(self, inf):
         arch = keystone.KS_ARCH_PPC
 
-        if inf.is_64bit():
-            mode = keystone.KS_MODE_PPC64
+        if ida_pro.IDA_SDK_VERSION < 900:
+            if inf.is_64bit():
+                mode = keystone.KS_MODE_PPC64
+            else:
+                mode = keystone.KS_MODE_PPC32
         else:
-            mode = keystone.KS_MODE_PPC32
-
+            if ida_ida.inf_is_64bit():
+                mode = keystone.KS_MODE_PPC64
+            else:
+                mode = keystone.KS_MODE_PPC32            
         # TODO: keystone does not support Little Endian mode for PPC?
         #if arch_name == 'ppc':
         #    mode += keystone.KS_MODE_BIG_ENDIAN
@@ -844,16 +867,27 @@ class AsmMIPS(KeystoneAssembler):
     def __init__(self, inf):
         arch = keystone.KS_ARCH_MIPS
 
-        if inf.is_64bit():
-            mode = keystone.KS_MODE_MIPS64
-        else:
-            mode = keystone.KS_MODE_MIPS32
+        if ida_pro.IDA_SDK_VERSION < 900:
 
-        if inf.is_be():
-            mode |= keystone.KS_MODE_BIG_ENDIAN
-        else:
-            mode |= keystone.KS_MODE_LITTLE_ENDIAN
+            if inf.is_64bit():
+                mode = keystone.KS_MODE_MIPS64
+            else:
+                mode = keystone.KS_MODE_MIPS32
 
+            if inf.is_be():
+                mode |= keystone.KS_MODE_BIG_ENDIAN
+            else:
+                mode |= keystone.KS_MODE_LITTLE_ENDIAN
+        else:
+            if ida_ida.inf_is_64bit():
+                mode = keystone.KS_MODE_MIPS64
+            else:
+                mode = keystone.KS_MODE_MIPS32
+
+            if ida_ida.inf_is_be():
+                mode |= keystone.KS_MODE_BIG_ENDIAN
+            else:
+                mode |= keystone.KS_MODE_LITTLE_ENDIAN            
         # initialize keystone-based assembler
         super(AsmMIPS, self).__init__(arch, mode)
 
@@ -866,16 +900,26 @@ class AsmSPARC(KeystoneAssembler):
     def __init__(self, inf):
         arch = keystone.KS_ARCH_SPARC
 
-        if inf.is_64bit():
-            mode = keystone.KS_MODE_SPARC64
-        else:
-            mode = keystone.KS_MODE_SPARC32
+        if ida_pro.IDA_SDK_VERSION < 900:
+            if inf.is_64bit():
+                mode = keystone.KS_MODE_SPARC64
+            else:
+                mode = keystone.KS_MODE_SPARC32
 
-        if inf.is_be():
-            mode |= keystone.KS_MODE_BIG_ENDIAN
+            if inf.is_be():
+                mode |= keystone.KS_MODE_BIG_ENDIAN
+            else:
+                mode |= keystone.KS_MODE_LITTLE_ENDIAN
         else:
-            mode |= keystone.KS_MODE_LITTLE_ENDIAN
+            if ida_ida.inf_is_64bit():
+                mode = keystone.KS_MODE_SPARC64
+            else:
+                mode = keystone.KS_MODE_SPARC32
 
+            if ida_ida.inf_is_be():
+                mode |= keystone.KS_MODE_BIG_ENDIAN
+            else:
+                mode |= keystone.KS_MODE_LITTLE_        
         # initialize keystone-based assembler
         super(AsmSPARC, self).__init__(arch, mode)
 
